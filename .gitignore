@@ -4,3 +4,10 @@
 *.ptx
 *.cubin
 *.fatbin
+*.cpp
+*.c
+*.o
+*.cu
+*.cl
+
+saxpy
