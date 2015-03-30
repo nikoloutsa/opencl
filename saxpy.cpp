@@ -18,28 +18,26 @@
 #include "ocl_macros.h"
 
 //Common defines
-#define VENDOR_NAME "AMD"
+#define VENDOR_NAME "NVIDIA"
 #define DEVICE_TYPE CL_DEVICE_TYPE_GPU
 
 #define VECTOR_SIZE 1024
-
-//OpenCL kernel which is run for every work item created.
-//The below const char string is compiled by the runtime complier
-//when a program object is created with clCreateProgramWithSource
-//and built with clBuildProgram.
-const char *saxpy_kernel =
-"__kernel                                   \n"
-"void saxpy_kernel(const float alpha,       \n"
-"                  __global float *A,       \n"
-"                  __global float *B,       \n"
-"                  __global float *C)       \n"
-"{                                          \n"
-"    //Get the index of the work-item       \n"
-"    int index = get_global_id(0);          \n"
-"    C[index] = alpha* A[index] + B[index]; \n"
-"}                                          \n";
+#define MAX_SOURCE_SIZE (0x100000)
 
 int main(void) {
+
+    FILE *fp;
+    char *source_str;
+    size_t source_size;
+
+    fp = fopen("saxpy_kernel.cl","r");
+    if (!fp) {
+      fprintf(stdout,"Failed to load kernel.\n");
+      exit(1);
+    }
+    source_str = (char*)malloc(MAX_SOURCE_SIZE);
+    source_size = fread(source_str,1,MAX_SOURCE_SIZE,fp);
+    fclose(fp);
 
     cl_int clStatus; //Keeps track of the error values returned.
 
@@ -101,7 +99,7 @@ int main(void) {
 
     // Create a program from the kernel source
     cl_program program = clCreateProgramWithSource(context, 1,
-            (const char **)&saxpy_kernel, NULL, &clStatus);
+            (const char **)&source_str, NULL, &clStatus);
     LOG_OCL_ERROR(clStatus, "clCreateProgramWithSource Failed..." );
 
     // Build the program

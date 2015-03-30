@@ -6,9 +6,9 @@ OBJECTS := $(addsuffix .cpp.o, $(basename $(wildcard *.cpp)))
 #OBJECTS=$(SOURCES:.cpp.o)
 EXECUTABLE=saxpy
 
-CUDA=/usr/local/cuda
+CUDA=/opt/cuda
 OPENCL_INC=$(CUDA)/include
-OPENCL_LIB=$(CUDA)/lib
+OPENCL_LIB=$(CUDA)/lib64
 
 LIBRARIES=-lOpenCL
 
