@@ -1,7 +1,7 @@
 #if !defined OCL_MACROS_H
 #define OCL_MACROS_H
 
-#define LOG_OCL_ERROR(x, STRING )  if(x!=CL_SUCCESS) {printf( "\nLine No: %d ", __LINE__ ); printf(STRING); printf("\n    Error= %d\n",x); exit(-1); }
+#define OCL_LOG(x, STRING )  if(x!=CL_SUCCESS) {printf( "\nLine No: %d ", __LINE__ ); printf(STRING); printf("\n    Error= %d\n",x); exit(-1); }
 
 #define LOG_OCL_COMPILER_ERROR(PROGRAM, DEVICE)                                          \
         {                                                                                \
@@ -49,6 +49,27 @@
             free(buildLog);                                                              \
             exit(1);                                                              \
         } 
+
+#define OCL_CHECK(_expr)                                                         \
+  do {                                                                          \
+    cl_int _err = _expr;                                                        \
+    if (_err == CL_SUCCESS)                                                     \
+      break;                                                                    \
+    fprintf(stderr, "OpenCL Error: '%s' returned %d!\n", #_expr, (int)_err);    \
+    exit(-1); /* abort(); */                                                     \
+  } while (0)
+
+#define OCL_CHECK_ERR(_expr)							\
+  ({										\
+     cl_int _err = CL_INVALID_VALUE;						\
+     typeof(_expr) _ret = _expr;						\
+     if (_err != CL_SUCCESS) {                                                  \
+       fprintf(stderr, "OpenCL Error: '%s' returned %d!\n", #_expr, (int)_err); \
+       exit(-1); /* abort(); */                                                  \
+     }                                                                          \
+     _ret;                                                                      \
+  })
+
 
 /* Get platform information and set up the Platform for the defined vendor*/                                                            
 #define OCL_CREATE_PLATFORMS( PLATFORM )                                      \
