@@ -9,7 +9,9 @@
 #include <CL/cl.h>
 #endif
 
+#include "utils.h"
 #include "ocl_macros.h"
+
 
 void PrintDeviceInfo(cl_device_id device);
 void PrintPlatformInfo(cl_platform_id platform);

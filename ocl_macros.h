@@ -1,7 +1,7 @@
 #if !defined OCL_MACROS_H
 #define OCL_MACROS_H
 
-#define OCL_LOG(x, STRING )  if(x!=CL_SUCCESS) {printf( "\nLine No: %d ", __LINE__ ); printf(STRING); printf("\n    Error= %d\n",x); exit(-1); }
+#define OCL_LOG(x, STRING )  if(x!=CL_SUCCESS) {printf( "\nLine No: %d ", __LINE__ ); printf(STRING); check_errors(x); printf("\n    Error= %d \n",x); exit(x); }
 
 #define LOG_OCL_COMPILER_ERROR(PROGRAM, DEVICE)                                          \
         {                                                                                \
@@ -56,7 +56,8 @@
     if (_err == CL_SUCCESS)                                                     \
       break;                                                                    \
     fprintf(stderr, "OpenCL Error: '%s' returned %d!\n", #_expr, (int)_err);    \
-    exit(-1); /* abort(); */                                                     \
+    check_errors((int)_err);															\
+    exit((int)_err); /* abort(); */                                                     \
   } while (0)
 
 #define OCL_CHECK_ERR(_expr)							\

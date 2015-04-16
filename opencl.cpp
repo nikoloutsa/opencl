@@ -1,22 +1,8 @@
-//If you want to build the file directly at the command prompt then use the following commands.
-//AMD commands
-//cl /c saxpy.cpp /I"%AMDAPPSDKROOT%\include"
-//link  /OUT:"saxpy.exe" "%AMDAPPSDKROOT%\lib\x86_64\OpenCL.lib" saxpy.obj
-
-//nVIDIA commands
-//cl /c saxpy.cpp /I"%NVSDKCOMPUTE_ROOT%\OpenCL\common\inc"
-//link  /OUT:"saxpy.exe" "%NVSDKCOMPUTE_ROOT%\OpenCL\common\lib\x64\OpenCL.lib" saxpy.obj
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#ifdef __APPLE__
-#include <OpenCL/cl.h>
-#else
 #include <CL/cl.h>
-#endif
+#include "utils.h"
 #include "ocl_macros.h"
 #include "print_info_property.h"
 
@@ -26,32 +12,18 @@
 //#define DEVICE_TYPE CL_DEVICE_TYPE_ACCELERATOR
 //#define DEVICE_TYPE CL_DEVICE_TYPE_DEFAULT
 
-#define VECTOR_SIZE 1024
+#define VECTOR_SIZE 16777216
 
-char* load_program_source(const char *filename) {
-   struct stat statbuf;
-   FILE *fh;
-   char *source;
-
-   fh = fopen(filename, "r");
-   if (fh == 0)
-	  return 0;
-
-   stat(filename, &statbuf);
-   source = (char *) malloc(statbuf.st_size + 1);
-   fread(source, statbuf.st_size, 1, fh);
-   source[statbuf.st_size] = '\0';
-
-   return source;
+static double get_second(void)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (double)tv.tv_sec + (double)tv.tv_usec / 1e6;
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
 
-   FILE *fp;
-   char *source_str;
-   size_t source_size;
-
-   source_str = load_program_source("saxpy_kernel.cl");
+   char *source_str = read_source("saxpy_kernel.cl");
 
    cl_int clStatus;
    cl_uint num_platforms = 0;
@@ -103,22 +75,35 @@ int main(void) {
 	  }
 
    }
-   // Create OpenCL context for devices in device_list
+
+   int pidx,didx;
+
+   /* If no parameter passed to program print error
+	  message and exit */
+   if (argc < 3)
+   {
+	  printf("Usage: opencl [platform] [device]\n");
+	  exit(-1); 
+   }
+
+   pidx = atoi(argv[1]); 
+   didx = atoi(argv[2]);
+
    cl_context context;
    cl_context_properties props[3] =
    {
 	  CL_CONTEXT_PLATFORM,
-	  (cl_context_properties)platforms[0],
+	  (cl_context_properties)platforms[pidx],
 	  0
    };
    // An OpenCL context can be associated to multiple devices, either CPU or GPU
    // based on the value of DEVICE_TYPE defined above.
-   context = clCreateContext( NULL, num_devices[0], devices[0], NULL, NULL, &clStatus);
-   OCL_LOG(clStatus, "clCreateContext Failed..." );
+   context = clCreateContext( NULL, num_devices[pidx], devices[pidx], NULL, NULL, &clStatus);
+   OCL_LOG(clStatus, "clCreateContext " );
 
-   // Create a command queue for the first device in device_list
-   cl_command_queue command_queue = clCreateCommandQueue(context, devices[0][0], 0, &clStatus);
-   OCL_LOG(clStatus, "clCreateCommandQueue Failed..." );
+   //cl_command_queue command_queue = clCreateCommandQueue(context, devices[pidx][didx], 0, &clStatus);
+   cl_command_queue command_queue = clCreateCommandQueue(context, devices[pidx][didx], 0, &clStatus);
+   OCL_LOG(clStatus, "clCreateCommandQueue " );
 
    float alpha = 2.0;
    // Allocate space for vectors A, B and C
@@ -143,45 +128,59 @@ int main(void) {
    // Copy the Buffer A and B to the device. We do a blocking write to the device buffer.
    clStatus = clEnqueueWriteBuffer(command_queue, A_clmem, CL_TRUE, 0,
 		 VECTOR_SIZE * sizeof(float), A, 0, NULL, NULL);
-   OCL_LOG(clStatus, "clEnqueueWriteBuffer Failed..." );
+   OCL_LOG(clStatus, "clEnqueueWriteBuffer " );
    clStatus = clEnqueueWriteBuffer(command_queue, B_clmem, CL_TRUE, 0,
 		 VECTOR_SIZE * sizeof(float), B, 0, NULL, NULL);
-   OCL_LOG(clStatus, "clEnqueueWriteBuffer Failed..." );
+   OCL_LOG(clStatus, "clEnqueueWriteBuffer " );
 
    // Create a program from the kernel source
    cl_program program = clCreateProgramWithSource(context, 1,
 		 (const char **)&source_str, NULL, &clStatus);
-   OCL_LOG(clStatus, "clCreateProgramWithSource Failed..." );
+   OCL_LOG(clStatus, "clCreateProgramWithSource " );
 
    // Build the program
-   clStatus = clBuildProgram(program, 1, devices[0], NULL, NULL, NULL);
+   clStatus = clBuildProgram(program, 1, devices[pidx], NULL, NULL, NULL);
    if(clStatus != CL_SUCCESS)
-	  LOG_OCL_COMPILER_ERROR(program, devices[0][0]);
+	  LOG_OCL_COMPILER_ERROR(program, devices[pidx][didx]);
 
    // Create the OpenCL kernel
    cl_kernel kernel = clCreateKernel(program, "saxpy_kernel", &clStatus);
 
-   // Set the arguments of the kernel. Take a look at the kernel definition in saxpy_kernel
-   // variable. First parameter is a constant and the other three are buffers.
+   // Set kernel arguments
    clStatus = clSetKernelArg(kernel, 0, sizeof(float),  (void *)&alpha);
    clStatus |= clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&A_clmem);
    clStatus |= clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&B_clmem);
    clStatus |= clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *)&C_clmem);
-   OCL_LOG(clStatus, "clSetKernelArg Failed..." );
+   OCL_LOG(clStatus, "clSetKernelArg " );
 
-   // Execute the OpenCL kernel on the list
-   size_t global_size = VECTOR_SIZE; // Process one vector element in each work item
-   size_t local_size = 64;           // Process in work groups of size 64.
-   cl_event saxpy_event;
-   clStatus = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
-		 &global_size, &local_size, 0, NULL, &saxpy_event);
-   OCL_LOG(clStatus, "clEnqueueNDRangeKernel Failed..." );
+   double   ndrange_start;
+   double   ndrange_stop;
+   float 	ocl_time_host;
+
+   size_t global_size = VECTOR_SIZE; 
+   size_t local_size = 64;
+   //OCL_CHECK( clGetDeviceInfo(devices[pidx][didx], CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &local_size, NULL));
+   cl_uint work_dim = 1;
+
+   cl_event saxpy_event = NULL;
+   ndrange_start=get_second();
+   //clStatus = clEnqueueNDRangeKernel(command_queue, kernel, work_dim, NULL,&global_size, &local_size, 0, NULL, &saxpy_event);
+   //OpenCL can choose work distribution automatically
+   clStatus = clEnqueueNDRangeKernel(command_queue, kernel, work_dim, NULL,&global_size, NULL, 0, NULL, &saxpy_event);
+   OCL_LOG(clStatus, "clEnqueueNDRangeKernel " );
+   clStatus = clWaitForEvents(1, &saxpy_event);
+   OCL_LOG(clStatus, "clWaitForEvents ");
+   ndrange_stop=get_second();
+   ocl_time_host = (float) (ndrange_stop - ndrange_start);
+   printf("NDRange perf. counter time %f ms.\n", 1000.0f*ocl_time_host);
+
+   
 
    // Read the memory buffer C_clmem on the device to the host allocated buffer C
    // This task is invoked only after the completion of the event saxpy_event
    clStatus = clEnqueueReadBuffer(command_queue, C_clmem, CL_TRUE, 0,
 		 VECTOR_SIZE * sizeof(float), C, 1, &saxpy_event, NULL);
-   OCL_LOG(clStatus, "clEnqueueReadBuffer Failed..." );
+   OCL_LOG(clStatus, "clEnqueueReadBuffer " );
 
    // Clean up and wait for all the comands to complete.
    clStatus = clFinish(command_queue);
@@ -205,4 +204,3 @@ int main(void) {
    free(devices);
    return 0;
 }
-
