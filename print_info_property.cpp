@@ -45,7 +45,7 @@ void PrintDeviceInfo(cl_device_id device)
 
     query_buffer[0] = '\0';
     OCL_CHECK(clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(query_buffer), &query_buffer, NULL));
-    printf("CL_DEVICE_NAME: %s\n", query_buffer); 
+    printf("CL_DEVICE_NAME: %s\n", query_buffer);
 	query_buffer[0] = '\0';
     OCL_CHECK( clGetDeviceInfo(device, CL_DEVICE_VENDOR, sizeof(query_buffer), &query_buffer, NULL));
     printf("CL_DEVICE_VENDOR: %s\n", query_buffer);
@@ -74,7 +74,7 @@ void PrintDeviceInfo(cl_device_id device)
     printf("CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS: %u\n", (unsigned int)workitem_dims);
 	size_t workitem_size[3];
     OCL_CHECK( clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(workitem_size), &workitem_size, NULL));
-    printf("CL_DEVICE_MAX_WORK_ITEM_SIZES: %u / %u / %u \n", workitem_size[0],workitem_size[1],workitem_size[2]);
+    printf("CL_DEVICE_MAX_WORK_ITEM_SIZES: %lu / %lu / %lu \n", workitem_size[0],workitem_size[1],workitem_size[2]);
 
 	return;
 }

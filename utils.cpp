@@ -64,14 +64,14 @@ char* read_source(const char *filename) {
    }
 
    if (fseek(file, 0, SEEK_END)) {
-	  printf("ERROR) Failed to seek file '%ls'\n", filename);
+	  printf("ERROR) Failed to seek file '%s'\n", filename);
 	  fclose(file);
 	  return NULL;
    }
 
    long size = ftell(file);
    if (size == 0) {
-	  printf("ERROR) Failed to check position on file '%ls'\n", filename);
+	  printf("ERROR) Failed to check position on file '%s'\n", filename);
 	  fclose(file);
 	  return NULL;
    }
@@ -80,15 +80,15 @@ char* read_source(const char *filename) {
 
    char *src = (char *) malloc(sizeof(char) * size + 1);
    if (!src) {
-	  printf("ERROR) Failed to allocate memory for file '%ls'\n", filename);
+	  printf("ERROR) Failed to allocate memory for file '%s'\n", filename);
 	  fclose(file);
 	  return NULL;
    }
 
-   printf("Reading file '%ls' (size %ld bytes)\n", filename, size);
+   printf("Reading file '%s' (size %ld bytes)\n", filename, size);
    size_t res = fread(src, 1, sizeof(char) * size, file);
    if (res != sizeof(char) * size) {
-	  printf("ERROR) Failed to read file '%ls'\n", filename);
+	  printf("ERROR) Failed to read file '%s'\n", filename);
 	  fclose(file);
 	  free(src);
 	  return NULL;
