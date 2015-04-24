@@ -2,6 +2,7 @@
 #define OCL_MACROS_H
 
 #define OCL_LOG(x, STRING )  if(x!=CL_SUCCESS) {printf( "\nLine No: %d ", __LINE__ ); printf(STRING); check_errors(x); printf("\n    Error= %d \n",x); exit(x); }
+#define SYS_LOG(x, STRING )  if (x) { perror(STRING); abort(); }
 
 #define LOG_OCL_COMPILER_ERROR(PROGRAM, DEVICE)                                          \
         {                                                                                \
@@ -47,7 +48,6 @@
             printf("%s",buildLog);                                                            \
             printf(" ************************************************\n");               \
             free(buildLog);                                                              \
-            exit(1);                                                              \
         } 
 
 #define OCL_CHECK(_expr)                                                         \

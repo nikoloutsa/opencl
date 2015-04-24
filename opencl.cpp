@@ -23,87 +23,35 @@ static double get_second(void)
 
 int main(int argc, char *argv[]) {
 
-   char *source_str = read_source("saxpy_kernel.cl");
-
-   cl_int clStatus;
-   cl_uint num_platforms = 0;
-
-   cl_platform_id * platforms = NULL;
-
-   cl_device_id **devices = NULL;
-   cl_uint *num_devices = NULL;
-
-   OCL_CHECK( clGetPlatformIDs(0, NULL, &num_platforms));
-   if (num_platforms == 0)
-   {
-	  printf("No OpenCL Platforms Found ....\n Exiting");
-   }
-   else
-   {
-
-	  printf ("Found %d Platforms\n", num_platforms);
-	  platforms = (cl_platform_id *)malloc(num_platforms*sizeof(cl_platform_id));
-	  num_devices = (cl_uint *)malloc(num_platforms*sizeof(cl_uint));
-	  devices = (cl_device_id **)malloc(num_platforms*sizeof(cl_device_id*));
-
-	  OCL_CHECK( clGetPlatformIDs (num_platforms, platforms, NULL) );
-
-	  for(cl_uint pidx=0;pidx<num_platforms; pidx++)
-	  {
-		 printf("==================Platform No %d======================\n",pidx);
-		 PrintPlatformInfo(platforms[pidx]);
-		 printf("======================================================\n\n");            
-
-		 OCL_CHECK(clGetDeviceIDs (platforms[pidx], CL_DEVICE_TYPE_ALL, 0, NULL, &num_devices[pidx]));
-
-		 devices[pidx] = (cl_device_id *)malloc(num_devices[pidx]*sizeof(cl_device_id));
-
-	  }
-
-
-	  for(cl_uint pidx=0;pidx<num_platforms; pidx++)
-	  { 
-		 printf("\nPrinting OpenCL Device Info For Platform ID : %d\n", pidx);
-		 OCL_CHECK(clGetDeviceIDs(platforms[pidx], CL_DEVICE_TYPE_ALL, num_devices[pidx], devices[pidx], NULL));
-
-		 for (cl_uint didx = 0; didx < num_devices[pidx]; didx++)
-		 {
-			printf("==================Device No %d======================\n",didx);
-			PrintDeviceInfo(devices[pidx][didx]);
-			printf("====================================================\n\n");
-		 }
-	  }
-
-   }
-
    int pidx,didx;
 
    /* If no parameter passed to program print error
 	  message and exit */
    if (argc < 3)
    {
-	  printf("Usage: opencl [platform] [device]\n");
+	  print_platforms_devices();
+	  printf("==================================\n");
+	  printf("Usage: opencl [platforms] [device]\n");
 	  exit(-1); 
    }
 
    pidx = atoi(argv[1]); 
    didx = atoi(argv[2]);
 
-   cl_context context;
-   cl_context_properties props[3] =
-   {
-	  CL_CONTEXT_PLATFORM,
-	  (cl_context_properties)platforms[pidx],
-	  0
-   };
-   // An OpenCL context can be associated to multiple devices, either CPU or GPU
-   // based on the value of DEVICE_TYPE defined above.
-   context = clCreateContext( NULL, num_devices[pidx], devices[pidx], NULL, NULL, &clStatus);
-   OCL_LOG(clStatus, "clCreateContext " );
 
-   //cl_command_queue command_queue = clCreateCommandQueue(context, devices[pidx][didx], 0, &clStatus);
-   cl_command_queue command_queue = clCreateCommandQueue(context, devices[pidx][didx], 0, &clStatus);
-   OCL_LOG(clStatus, "clCreateCommandQueue " );
+   cl_context context;
+   cl_command_queue command_queue;
+   cl_int clStatus;
+
+   create_context(pidx, didx, &context, &command_queue, 0);
+
+  // --------------------------------------------------------------------------
+  // load kernels 
+  // --------------------------------------------------------------------------
+  char *source_str = read_source("saxpy_kernel.cl");
+  cl_kernel kernel = build_kernel(context, source_str, "saxpy_kernel", NULL);
+  free(source_str);
+
 
    float alpha = 2.0;
    // Allocate space for vectors A, B and C
@@ -139,12 +87,12 @@ int main(int argc, char *argv[]) {
    OCL_LOG(clStatus, "clCreateProgramWithSource " );
 
    // Build the program
-   clStatus = clBuildProgram(program, 1, devices[pidx], NULL, NULL, NULL);
-   if(clStatus != CL_SUCCESS)
-	  LOG_OCL_COMPILER_ERROR(program, devices[pidx][didx]);
+   //clStatus = clBuildProgram(program, 1, devices[pidx], NULL, NULL, NULL);
+   //LOG_OCL_COMPILER_ERROR(program, devices[pidx][didx]);
+
 
    // Create the OpenCL kernel
-   cl_kernel kernel = clCreateKernel(program, "saxpy_kernel", &clStatus);
+   kernel = clCreateKernel(program, "saxpy_kernel", &clStatus);
 
    // Set kernel arguments
    clStatus = clSetKernelArg(kernel, 0, sizeof(float),  (void *)&alpha);
@@ -153,6 +101,7 @@ int main(int argc, char *argv[]) {
    clStatus |= clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *)&C_clmem);
    OCL_LOG(clStatus, "clSetKernelArg " );
 
+   //LOG_OCL_COMPILER_ERROR(program, devices[pidx][didx]);
    double   ndrange_start;
    double   ndrange_stop;
    float 	ocl_time_host;
@@ -200,7 +149,5 @@ int main(int argc, char *argv[]) {
    free(A);
    free(B);
    free(C);
-   free(platforms);
-   free(devices);
    return 0;
 }
