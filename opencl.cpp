@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
   float 	ocl_time_host;
 
   size_t global_size = VECTOR_SIZE; 
-  size_t local_size = 64;
+  //size_t local_size = 64;
   //OCL_CHECK( clGetDeviceInfo(devices[pidx][didx], CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &local_size, NULL));
   cl_uint work_dim = 1;
 
