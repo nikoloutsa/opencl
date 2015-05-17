@@ -106,18 +106,22 @@ char* read_source(const char *filename)
 
 void create_context(int pidx, int didx, cl_context *contex, cl_command_queue *command_queue, int enable_profiling)
 {
+   cl_int status;
+   size_t platform_name_length = 0;
+   size_t device_name_length = 0;
    // get number of platforms
    cl_uint num_platforms;
    OCL_CHECK(clGetPlatformIDs(0, NULL, &num_platforms));
 
    // allocate memory, get list of platform handles
-   cl_platform_id *platforms =
-	  (cl_platform_id *) malloc(num_platforms*sizeof(cl_platform_id));
+   cl_platform_id *platforms = (cl_platform_id *) malloc(num_platforms*sizeof(cl_platform_id));
    SYS_LOG(!platforms, "allocating platform array");
    OCL_CHECK(clGetPlatformIDs (num_platforms, platforms, NULL));
-   char buf[MAX_NAME_LEN];
-   OCL_CHECK(clGetPlatformInfo (platforms[pidx], CL_PLATFORM_VENDOR,	sizeof(buf), buf, NULL));
-   printf("platform %d: vendor '%s'\n", pidx, buf);
+   OCL_CHECK(clGetPlatformInfo (platforms[pidx], CL_PLATFORM_NAME,	0, 0, &platform_name_length));
+   char* platform_name = (char*) malloc(platform_name_length*sizeof(char));
+   OCL_CHECK(clGetPlatformInfo (platforms[pidx], CL_PLATFORM_NAME,	platform_name_length, platform_name, NULL));
+   printf("platform %d: name '%s'\n", pidx, platform_name);
+   free(platform_name);
 
    // get number of devices in platform
    cl_uint num_devices;
@@ -128,20 +132,25 @@ void create_context(int pidx, int didx, cl_context *contex, cl_command_queue *co
    SYS_LOG(!devices, "allocating device array");
 
    OCL_CHECK(clGetDeviceIDs (platforms[pidx], CL_DEVICE_TYPE_ALL,num_devices, devices, NULL));
+   OCL_CHECK(clGetDeviceInfo (devices[didx], CL_DEVICE_NAME,0,0, &device_name_length));
+   char* device_name = (char*) malloc(device_name_length*sizeof(char));
 
-   OCL_CHECK(clGetDeviceInfo (devices[didx], CL_DEVICE_NAME,sizeof(buf), buf, NULL));
-   printf("  device %d: '%s'\n", didx, buf);
-
+   OCL_CHECK(clGetDeviceInfo (devices[didx], CL_DEVICE_NAME,device_name_length, device_name, NULL));
+   cl_uint num_compute_units;
+   OCL_CHECK(clGetDeviceInfo (devices[didx], CL_DEVICE_MAX_COMPUTE_UNITS,sizeof(cl_uint), &num_compute_units, NULL));
+   printf("device %d: name '%s'\ncompute units: %d\n", didx, device_name,num_compute_units);
+   free(device_name);
+   
+   //Create Context
    cl_context_properties cprops[3] = {
 	  CL_CONTEXT_PLATFORM, (cl_context_properties) platforms[pidx], 0 };
 
-   cl_int status;
-   *contex = clCreateContext(cprops, 1, devices, NULL, NULL, &status);
+   *contex = clCreateContext(cprops, 1, &devices[didx], NULL, NULL, &status);
    OCL_LOG(status, "clCreateContext");
    cl_command_queue_properties qprops = 0;
    if (enable_profiling)
 	  qprops |= CL_QUEUE_PROFILING_ENABLE;
-
+   //Create command queue for device
    if (command_queue)
    {
 	  *command_queue = clCreateCommandQueue(*contex, devices[didx], qprops, &status);
