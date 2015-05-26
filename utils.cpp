@@ -178,12 +178,11 @@ cl_kernel build_kernel(cl_context context,char const *kernel_source, char const 
 
   // build it
   status = clBuildProgram(program, 0, NULL, options, NULL, NULL);
-  OCL_LOG(status, "clBuildProgram");
   cl_device_id dev;
   OCL_CHECK(clGetProgramInfo (program, CL_PROGRAM_DEVICES,sizeof(dev), &dev, NULL));
   if(status != CL_SUCCESS)
 	 LOG_OCL_COMPILER_ERROR(program, dev);
-
+  OCL_LOG(status, "clBuildProgram");
 
 
   // fish the kernel out of the program
