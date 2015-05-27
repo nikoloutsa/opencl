@@ -1,0 +1,8 @@
+site_name: OpenCL
+pages:
+   - [index.md, Home]
+   - [about.md, About]
+repo_url: https://github.com/nikoloutsa/opencl     
+site_description: OpenCL notes
+site_author: Nikos Nikoloutsakos   
+theme: bootstrap 
