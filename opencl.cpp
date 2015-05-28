@@ -12,7 +12,7 @@
 //#define DEVICE_TYPE CL_DEVICE_TYPE_ACCELERATOR
 //#define DEVICE_TYPE CL_DEVICE_TYPE_DEFAULT
 
-#define VECTOR_SIZE 32
+#define VECTOR_SIZE 128
 
 static double get_second(void)
 {
@@ -59,8 +59,8 @@ int main(int argc, char *argv[]) {
   double *B = (double*)malloc(sizeof(double)*VECTOR_SIZE);
   for(int i = 0; i < VECTOR_SIZE; i++)
   {
-	 A[i] = 0.0;
-	 B[i] = 0.0;
+	 A[i] = -1.0;
+	 B[i] = -1.0;
   }
 
   // Create memory buffers on the device for each vector
@@ -88,14 +88,13 @@ int main(int argc, char *argv[]) {
   double   ndrange_stop;
   double 	ocl_time_host;
 
-  size_t global_size[] = {VECTOR_SIZE/2,2}; 
-  //size_t local_size = 64;
-  //OCL_CHECK( clGetDeviceInfo(devices[pidx][didx], CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &local_size, NULL));
+  size_t global_size[] = {64/4,4}; 
+  size_t local_size[] = {4,4}; 
   cl_uint work_dim = 2;
 
   cl_event saxpy_event = NULL;
   ndrange_start=get_second();
-  clStatus = clEnqueueNDRangeKernel(command_queue, kernel, work_dim, NULL,global_size, NULL, 0, NULL, &saxpy_event);
+  clStatus = clEnqueueNDRangeKernel(command_queue, kernel, work_dim, NULL,global_size, local_size, 0, NULL, &saxpy_event);
   OCL_LOG(clStatus, "clEnqueueNDRangeKernel " );
   clStatus = clWaitForEvents(1, &saxpy_event);
   OCL_LOG(clStatus, "clWaitForEvents ");

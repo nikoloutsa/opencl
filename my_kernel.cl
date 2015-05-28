@@ -10,9 +10,10 @@ int gx = get_global_id(0);
 int gy = get_global_id(1);
 int Gx = get_global_size(0);
 int Gy = get_global_size(1);
+int W = get_num_groups(0);
 
 //   A[gx] = Gx;
  //  B[gx] = gx;
-   A[gy] = Gy;
-   B[gy] = gy;
+   A[gy*Gx+gx] = W;
+   B[gy*Gx+gx] = gy*Gx+gx;
 }
