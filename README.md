@@ -2,6 +2,10 @@
 
 Simple OpenCL vector add example
 
+## Doc
+
+https://github.com/nikoloutsa/opencl
+
 ## Phi
 ```
 source /opt/intel/composerxe/bin/compilervars.sh intel64
