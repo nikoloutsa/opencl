@@ -4,7 +4,7 @@ Simple OpenCL vector add example
 
 ## Doc
 
-https://github.com/nikoloutsa/opencl
+http://nikoloutsa.github.io/opencl/
 
 ## Phi
 ```
