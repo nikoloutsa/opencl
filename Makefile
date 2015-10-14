@@ -1,5 +1,5 @@
-CC=nvcc
-#CC=icc
+#CC=nvcc
+CC=icc
 CFLAGS=
 LDFLAGS=
 OBJECTS := $(addsuffix .cpp.o, $(basename $(wildcard *.cpp)))

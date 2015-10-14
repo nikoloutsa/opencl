@@ -1,5 +1,6 @@
 #include "utils.h"
 #include "ocl_macros.h"
+#include "print_info_property.h"
 
 #define MAX_NAME_LEN 80
 
@@ -121,6 +122,7 @@ void create_context(int pidx, int didx, cl_context *contex, cl_command_queue *co
    char* platform_name = (char*) malloc(platform_name_length*sizeof(char));
    OCL_CHECK(clGetPlatformInfo (platforms[pidx], CL_PLATFORM_NAME,	platform_name_length, platform_name, NULL));
    printf("platform %d: name '%s'\n", pidx, platform_name);
+   PrintPlatformInfo(platforms[pidx]);
    free(platform_name);
 
    // get number of devices in platform
@@ -139,6 +141,7 @@ void create_context(int pidx, int didx, cl_context *contex, cl_command_queue *co
    cl_uint num_compute_units;
    OCL_CHECK(clGetDeviceInfo (devices[didx], CL_DEVICE_MAX_COMPUTE_UNITS,sizeof(cl_uint), &num_compute_units, NULL));
    printf("device %d: name '%s'\ncompute units: %d\n", didx, device_name,num_compute_units);
+   PrintDeviceInfo(devices[didx]);
    free(device_name);
    
    //Create Context

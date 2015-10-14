@@ -117,9 +117,11 @@ int main(int argc, char *argv[]) {
   clStatus = clFinish(command_queue);
 
   // Display the result to the screen
+  /*
   for(int i = 0; i < VECTOR_SIZE; i++){
 	 printf("[%f,%f]\n", A[i],B[i]);
   }
+  */
 
   // Finally release all OpenCL objects and release the host buffers.
   clStatus = clReleaseKernel(kernel);
